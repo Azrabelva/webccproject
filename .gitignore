@@ -1,0 +1,37 @@
+# ===============================
+# CORE
+# ===============================
+/vendor/
+node_modules/
+
+# ===============================
+# ENV & SECRET
+# ===============================
+.env
+.env.*
+config_local.php
+config.php
+
+# ===============================
+# UPLOAD & GENERATED FILES
+# ===============================
+/uploads/
+/uploads_premium/
+*.zip
+*.rar
+*.sql
+*.log
+
+# ===============================
+# CACHE / SYSTEM
+# ===============================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ===============================
+# PAYMENT / SECRET LOGS
+# ===============================
+Midtrans/.env
+Midtrans/*.log

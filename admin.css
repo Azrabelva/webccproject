@@ -1,0 +1,238 @@
+/* ================= ADMIN LOCKED STYLE ================= */
+
+:root{
+    --pink:#ec4899;
+    --pink-dark:#db2777;
+    --green:#22c55e;
+    --red:#ef4444;
+    --purple:#8b5cf6;
+    --soft:#fce7f3;
+    --bg:#fde2f3;
+    --text:#374151;
+}
+
+*{
+    box-sizing:border-box;
+    font-family:'Poppins',Arial,sans-serif;
+    margin:0;
+    padding:0;
+}
+
+/* ================= PAGE ================= */
+.page-bg{
+    min-height:100vh;
+    background:linear-gradient(135deg,#fde2f3,#fbcfe8,#e0e7ff);
+}
+
+/* ================= HEADER ================= */
+.lc-header{
+    background:linear-gradient(135deg,var(--pink),var(--pink-dark));
+    padding:16px 0;
+    color:#fff;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    position:sticky;
+    top:0;
+    z-index:50;
+}
+
+.header-flex{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo-text{
+    font-size:22px;
+    font-weight:800;
+    letter-spacing:.5px;
+}
+
+.logo-text span{
+    font-weight:400;
+    opacity:.9;
+}
+
+.lc-header nav a{
+    color:#fff;
+    text-decoration:none;
+    margin-left:18px;
+    font-weight:600;
+    font-size:14px;
+}
+
+.lc-header nav a:hover{
+    opacity:.85;
+}
+
+/* ================= ADMIN STATS ================= */
+.admin-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:22px;
+    margin-top:32px;
+}
+
+.stat-box{
+    padding:24px;
+    border-radius:22px;
+    color:#fff;
+    box-shadow:0 18px 40px rgba(0,0,0,.18);
+    transition:.25s;
+}
+
+.stat-box:hover{
+    transform:translateY(-4px);
+}
+
+.stat-box h4{
+    font-size:13px;
+    opacity:.9;
+    letter-spacing:.4px;
+}
+
+.stat-box p{
+    font-size:30px;
+    font-weight:800;
+    margin-top:8px;
+}
+
+.stat-box.pink{background:linear-gradient(135deg,#ec4899,#db2777);}
+.stat-box.green{background:linear-gradient(135deg,#22c55e,#16a34a);}
+.stat-box.red{background:linear-gradient(135deg,#ef4444,#dc2626);}
+.stat-box.purple{background:linear-gradient(135deg,#8b5cf6,#7c3aed);}
+
+/* ================= CARD ================= */
+.card{
+    background:#fff;
+    border-radius:24px;
+    padding:30px;
+    margin-top:36px;
+    box-shadow:0 22px 44px rgba(0,0,0,.14);
+}
+
+.card h2{
+    color:#be185d;
+    margin-bottom:20px;
+    font-size:20px;
+}
+
+/* ================= TEMPLATE GRID ================= */
+.admin-template-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:24px;
+}
+
+.admin-template-card{
+    background:#fff;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 14px 32px rgba(0,0,0,.16);
+    transition:.3s;
+}
+
+.admin-template-card:hover{
+    transform:translateY(-6px);
+}
+
+.admin-template-card img{
+    width:100%;
+    height:150px;
+    object-fit:cover;
+}
+
+.admin-template-info{
+    padding:16px;
+}
+
+.admin-template-info h4{
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:10px;
+    color:var(--text);
+}
+
+.badge{
+    display:inline-block;
+    padding:4px 14px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    color:#fff;
+}
+
+.badge-free{background:#9ca3af;}
+.badge-premium{background:var(--pink);}
+
+/* TEMPLATE ACTION */
+.admin-template-action{
+    padding:14px;
+    border-top:1px solid #eee;
+    text-align:center;
+}
+
+.btn-edit{
+    display:inline-block;
+    padding:9px 16px;
+    border-radius:999px;
+    background:var(--soft);
+    color:var(--pink-dark);
+    text-decoration:none;
+    font-weight:700;
+    font-size:13px;
+}
+
+.btn-edit:hover{
+    background:#fbcfe8;
+}
+
+/* ================= TABLE ================= */
+.table-wrapper{
+    overflow-x:auto;
+    margin-top:10px;
+}
+
+.table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table th,
+.table td{
+    padding:14px;
+    border-bottom:1px solid #eee;
+    font-size:14px;
+    color:var(--text);
+}
+
+.table th{
+    background:var(--soft);
+    color:#be185d;
+    font-weight:700;
+    text-align:left;
+}
+
+.table tr:hover td{
+    background:#fff5fa;
+}
+
+.badge-paid,
+.badge-unpaid{
+    padding:5px 14px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    color:#fff;
+}
+
+.badge-paid{background:var(--green);}
+.badge-unpaid{background:var(--red);}
+
+/* ================= FOOTER ================= */
+.lc-footer{
+    text-align:center;
+    padding:26px;
+    font-size:13px;
+    color:#555;
+    margin-top:40px;
+}

@@ -1,0 +1,521 @@
+/* ================= LOGIN PAGE ================= */
+body.page-bg{
+    min-height:100vh;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(236,72,153,.25), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(168,85,247,.25), transparent 45%),
+        linear-gradient(135deg,#fde2f3,#fbcfe8,#e0e7ff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Poppins',sans-serif;
+    position:relative;
+    overflow:hidden;
+}
+
+/* LoveCrafted BIG watermark */
+body.page-bg::before{
+    content:"LoveCrafted";
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%) rotate(-8deg);
+    font-size:140px;
+    font-weight:800;
+    color:rgba(236,72,153,0.12);
+    letter-spacing:10px;
+    pointer-events:none;
+    white-space:nowrap;
+}
+
+/* Floating greeting decorations */
+body.page-bg::after{
+    content:"💌 🎀 💖 🎂 ✨";
+    position:absolute;
+    bottom:40px;
+    right:60px;
+    font-size:42px;
+    opacity:.35;
+    animation: floatEmoji 6s ease-in-out infinite;
+    pointer-events:none;
+}
+
+@keyframes floatEmoji{
+    0%{ transform:translateY(0); }
+    50%{ transform:translateY(-14px); }
+    100%{ transform:translateY(0); }
+}
+
+/* ================= LOGIN CARD ================= */
+.login-card{
+    width:100%;
+    max-width:520px;              /* 🔥 LEBIH BESAR */
+    background:rgba(255,255,255,.96);
+    border-radius:32px;
+    padding:46px 44px 48px;        /* 🔥 LEBIH LEGAAAA */
+    box-shadow:0 40px 80px rgba(236,72,153,.35);
+    position:relative;
+    animation:fadeUp .8s ease;
+    z-index:1;
+}
+
+/* Gradient border */
+.login-card::before{
+    content:"";
+    position:absolute;
+    inset:-3px;
+    border-radius:34px;
+    background:linear-gradient(135deg,#ec4899,#a855f7,#60a5fa);
+    z-index:-1;
+}
+
+/* ================= TITLE ================= */
+.login-title{
+    text-align:center;
+    font-size:30px;               /* 🔥 LEBIH BESAR */
+    font-weight:800;
+    color:hsl(335, 100%, 81%);
+    margin-bottom:6px;
+}
+
+.login-sub{
+    text-align:center;
+    font-size:15px;
+    margin-bottom:28px;
+    color:#ffffff;
+}
+
+/* ================= INPUT ================= */
+.input-group{
+    margin-bottom:20px;
+    position:relative;
+}
+
+.input-group input{
+    width:100%;
+    box-sizing:border-box;          /* 🔒 KUNCI UKURAN */
+    padding:14px 16px 14px 50px;    /* aman di dalam frame */
+    border-radius:16px;             /* sesuai card */
+    border:1.4px solid #fbcfe8;
+    font-size:15px;
+    background:#fff;
+    transition:.25s ease;
+}
+
+.input-group input:focus{
+    outline:none;
+    border-color:#ec4899;
+    box-shadow:0 0 0 4px rgba(236,72,153,.18);
+}
+
+.input-group span{
+    position:absolute;
+    left:18px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:20px;
+    opacity:.65;
+}
+
+/* ================= BUTTON ================= */
+.btn-login{
+    width:100%;
+    padding:16px;
+    border-radius:999px;
+    background:linear-gradient(135deg,#ec4899,#db2777);
+    color:#fff;
+    border:none;
+    font-size:17px;
+    font-weight:800;
+    cursor:pointer;
+    transition:.25s;
+    margin-top:14px;
+}
+
+.btn-login:hover{
+    transform:translateY(-3px);
+    box-shadow:0 18px 40px rgba(236,72,153,.55);
+}
+
+.btn-login:active{
+    transform:scale(.96);
+}
+
+/* ================= ERROR ================= */
+.login-error{
+    background:#fee2e2;
+    color:#991b1b;
+    padding:12px;
+    border-radius:14px;
+    font-size:14px;
+    margin-bottom:16px;
+    text-align:center;
+    animation:shake .4s;
+}
+
+/* ================= LOADING ================= */
+.loading{
+    display:none;
+    text-align:center;
+    margin-top:18px;
+    font-size:26px;
+    animation:pulse 1s infinite;
+}
+
+/* ================= FOOTER ================= */
+.login-footer{
+    text-align:center;
+    margin-top:22px;
+    font-size:14px;
+}
+
+.login-footer a{
+    color:#ec4899;
+    font-weight:700;
+    text-decoration:none;
+}
+
+.login-footer a:hover{
+    text-decoration:underline;
+}
+
+/* ================= ANIMATIONS ================= */
+@keyframes fadeUp{
+    from{opacity:0; transform:translateY(36px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+@keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+}
+
+@keyframes pulse{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.35);}
+    100%{transform:scale(1);}
+}
+
+/* ================= TEMPLATE PREVIEW ================= */
+.template-preview{
+    height:160px;
+    border-radius:14px;
+    display:flex;
+    align-items:flex-end;
+    padding:14px;
+    color:#fff;
+    position:relative;
+    overflow:hidden;
+}
+
+/* Overlay gelap biar teks kebaca */
+.template-preview::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,.45), transparent 60%);
+}
+
+/* Text */
+.preview-text{
+    position:relative;
+    z-index:2;
+}
+
+.preview-text h4{
+    margin:0;
+    font-size:16px;
+    font-weight:700;
+}
+
+.preview-text p{
+    margin:4px 0 0;
+    font-size:12px;
+    opacity:.9;
+}
+
+/* ================= VARIASI TEMPLATE ================= */
+
+/* Birthday */
+.template-preview.birthday{
+    background:
+      radial-gradient(circle at top left, #f9a8d4, transparent 40%),
+      linear-gradient(135deg,#ec4899,#f472b6);
+}
+
+/* Anniversary */
+.template-preview.anniversary{
+    background:
+      radial-gradient(circle at top left, #fde68a, transparent 40%),
+      linear-gradient(135deg,#f59e0b,#fbbf24);
+}
+
+/* Mother */
+.template-preview.mother{
+    background:
+      radial-gradient(circle at top left, #fbcfe8, transparent 40%),
+      linear-gradient(135deg,#ec4899,#fb7185);
+}
+
+/* Father */
+.template-preview.father{
+    background:
+      radial-gradient(circle at top left, #93c5fd, transparent 40%),
+      linear-gradient(135deg,#3b82f6,#60a5fa);
+}
+
+/* Premium background */
+.template-preview.premium-bg{
+    background:
+      radial-gradient(circle at top left, #e9d5ff, transparent 40%),
+      linear-gradient(135deg,#a855f7,#6366f1);
+}
+
+/* ================= DASHBOARD ================= */
+.dashboard-wrapper{
+    width:100%;
+    max-width:1200px;
+    padding:40px 24px 80px;
+}
+
+/* HEADER */
+.dashboard-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:36px;
+}
+
+.logo{
+    height:48px;
+}
+
+.user-info a{
+    color:#ec4899;
+    font-weight:700;
+    text-decoration:none;
+}
+
+/* HERO */
+.hero-card{
+    background:rgba(255,255,255,.96);
+    border-radius:32px;
+    padding:48px;
+    text-align:center;
+    box-shadow:0 30px 60px rgba(236,72,153,.35);
+    margin-bottom:46px;
+}
+
+.hero-card h1{
+    font-size:34px;
+    font-weight:800;
+    margin-bottom:10px;
+    color:#db2777;
+}
+
+.hero-card p{
+    font-size:16px;
+    opacity:.85;
+}
+
+/* TEMPLATE GRID */
+.template-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:28px;
+}
+
+/* TEMPLATE CARD */
+.template-card{
+    background:#fff;
+    border-radius:26px;
+    padding:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.08);
+    transition:.3s;
+}
+
+.template-card:hover{
+    transform:translateY(-8px);
+    box-shadow:0 30px 70px rgba(236,72,153,.35);
+}
+
+.btn-template{
+    display:block;
+    margin-top:16px;
+    text-align:center;
+    padding:14px;
+    border-radius:999px;
+    font-weight:800;
+    background:#ec4899;
+    color:#fff;
+    text-decoration:none;
+}
+
+.premium-btn{
+    background:linear-gradient(135deg,#a855f7,#6366f1);
+}
+
+/* ================= POPUP UPGRADE ================= */
+
+.popup-premium{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+
+.popup-card{
+    background:#fff;
+    width:360px;
+    padding:28px;
+    border-radius:24px;
+    text-align:center;
+    box-shadow:0 30px 60px rgba(236,72,153,.4);
+    position:relative;
+    animation:fadeUp .4s ease;
+}
+
+/* ================= PREMIUM POPUP ================= */
+
+.popup-premium{
+    position:fixed;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:
+        radial-gradient(circle at top left, rgba(236,72,153,.35), transparent 40%),
+        radial-gradient(circle at bottom right, rgba(168,85,247,.35), transparent 40%),
+        rgba(15,15,25,.55);
+    backdrop-filter:blur(10px);
+    z-index:99999;
+    animation:fadeIn .35s ease;
+}
+
+.popup-card{
+    width:380px;
+    padding:36px 28px 34px;
+    background:rgba(255,255,255,.92);
+    border-radius:30px;
+    text-align:center;
+    position:relative;
+    box-shadow:
+        0 35px 80px rgba(236,72,153,.45),
+        inset 0 0 0 1.5px rgba(255,255,255,.45);
+    animation:popupFloat .45s cubic-bezier(.4,1.3,.6,1);
+}
+
+/* Glow border */
+.popup-card::before{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius:32px;
+    background:linear-gradient(135deg,#ec4899,#a855f7,#60a5fa);
+    z-index:-1;
+    filter:blur(12px);
+    opacity:.65;
+}
+
+/* Close Button */
+.popup-close{
+    position:absolute;
+    top:16px;
+    right:16px;
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:rgba(236,72,153,.15);
+    color:#ec4899;
+    font-size:24px;
+    font-weight:900;
+    border:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.35s ease;
+}
+
+.popup-close:hover{
+    background:linear-gradient(135deg,#ec4899,#db2777);
+    color:#fff;
+    transform:rotate(90deg) scale(1.15);
+    box-shadow:0 12px 30px rgba(236,72,153,.6);
+}
+
+/* Button Upgrade */
+.popup-btn{
+    margin-top:22px;
+    display:block;
+    padding:15px;
+    border-radius:999px;
+    font-weight:800;
+    background:linear-gradient(135deg,#ec4899,#a855f7);
+    color:#fff;
+    text-decoration:none;
+    transition:.35s;
+}
+
+.popup-btn:hover{
+    transform:translateY(-4px);
+    box-shadow:0 20px 45px rgba(236,72,153,.65);
+}
+
+/* Animations */
+@keyframes popupFloat{
+    from{ transform:translateY(40px) scale(.9); opacity:0; }
+    to{ transform:translateY(0) scale(1); opacity:1; }
+}
+@keyframes fadeIn{
+    from{opacity:0;} to{opacity:1;}
+}
+
+/* =========================================================
+   DASHBOARD BACKGROUND DECOR (SAFE LAYER)
+   ========================================================= */
+
+.bg-decoration{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+
+    background:
+        url("assets/lovecrafted.png") center/420px no-repeat,
+        radial-gradient(circle at 12% 18%, rgba(236,72,153,.25), transparent 45%),
+        radial-gradient(circle at 88% 82%, rgba(168,85,247,.25), transparent 45%);
+    opacity:.9;
+}
+
+/* Floating emoji decoration */
+.bg-decoration::after{
+    content:"💖 🎀 ✨ 💌 🌸";
+    position:absolute;
+    bottom:60px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:46px;
+    opacity:.35;
+    animation: dashboardFloat 7s ease-in-out infinite;
+}
+
+@keyframes dashboardFloat{
+    0%{ transform:translateX(-50%) translateY(0); }
+    50%{ transform:translateX(-50%) translateY(-18px); }
+    100%{ transform:translateX(-50%) translateY(0); }
+}
+
+/* Make sure content stays above decoration */
+.dashboard-wrapper,
+.lc-container,
+.hero-card,
+.template-grid,
+.lc-header{
+    position:relative;
+    z-index:2;
+}
