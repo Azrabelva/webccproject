@@ -7,7 +7,7 @@ pipeline {
             steps {
                 git branch: 'main',
                     credentialsId: 'github-credentials',
-                    url: 'https://github.com/Azrabelva.git'
+                    url: 'https://github.com/Azrabelva/webccproject.git'
             }
         }
 
