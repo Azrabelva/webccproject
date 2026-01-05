@@ -1,33 +1,43 @@
-
 pipeline {
     agent any
 
     stages {
+
         stage('Checkout') {
             steps {
-                echo 'Checkout source code'
-                sh 'ls'
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/USERNAME/NAMA-REPO.git'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Build process'
+                echo 'Build aplikasi'
                 sh 'echo Build sukses'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Testing'
+                echo 'Testing aplikasi'
                 sh 'echo Test sukses'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t lovecrafted-app .'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploy'
-                sh 'echo Deploy selesai'
+                sh '''
+                docker stop lovecrafted || true
+                docker rm lovecrafted || true
+                docker run -d -p 8080:80 --name lovecrafted lovecrafted-app
+                '''
             }
         }
     }
