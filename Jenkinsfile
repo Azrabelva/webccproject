@@ -36,7 +36,7 @@ pipeline {
                 sh '''
                 docker stop lovecrafted || true
                 docker rm lovecrafted || true
-                docker run -d -p 8080:80 --name lovecrafted lovecrafted-app
+                docker run -d -p 8081:80 --name lovecrafted lovecrafted-app
                 '''
             }
         }
