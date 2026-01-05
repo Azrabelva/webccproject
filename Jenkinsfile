@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKERHUB_USER = 'pashaputri'
-        IMAGE_NAME = 'lovecrafted'
-        IMAGE_TAG = 'latest'
+        IMAGE_NAME     = 'lovecrafted'
+        IMAGE_TAG      = 'latest'
     }
 
     stages {
@@ -18,8 +18,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG .
+                bat '''
+                docker build -t %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG% .
                 '''
             }
         }
@@ -31,9 +31,9 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG
+                    bat '''
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    docker push %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%
                     docker logout
                     '''
                 }
@@ -42,7 +42,7 @@ pipeline {
 
         stage('Cleanup') {
             steps {
-                sh 'docker image prune -f'
+                bat 'docker image prune -f'
             }
         }
     }
