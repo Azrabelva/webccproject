@@ -27,7 +27,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t lovecrafted-app .'
+                sh 'docker build -t lovecrafted-ky .'
             }
         }
 
