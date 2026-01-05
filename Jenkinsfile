@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'pashaputri'
-        IMAGE_NAME     = 'lovecrafted'
-        IMAGE_TAG      = 'latest'
+        ACR_SERVER = 'lovecraftedacr.azurecr.io'
+        IMAGE_NAME = 'lovecrafted'
+        IMAGE_TAG  = 'latest'
     }
 
     stages {
@@ -19,24 +19,30 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 bat '''
-                docker build -t %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG% .
+                docker build -t %ACR_SERVER%/%IMAGE_NAME%:%IMAGE_TAG% .
                 '''
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Login to ACR') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    credentialsId: 'acr-creds',
+                    usernameVariable: 'ACR_USER',
+                    passwordVariable: 'ACR_PASS'
                 )]) {
                     bat '''
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                    docker push %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%
-                    docker logout
+                    docker login %ACR_SERVER% -u %ACR_USER% -p %ACR_PASS%
                     '''
                 }
+            }
+        }
+
+        stage('Push Image to ACR') {
+            steps {
+                bat '''
+                docker push %ACR_SERVER%/%IMAGE_NAME%:%IMAGE_TAG%
+                '''
             }
         }
 
