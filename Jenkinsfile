@@ -1,29 +1,48 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKERHUB_USER = 'pashaputri'
+        IMAGE_NAME = 'lovecrafted'
+        IMAGE_TAG = 'latest'
+    }
+
     stages {
 
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    credentialsId: 'github-credentials',
                     url: 'https://github.com/Azrabelva/webccproject.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                sh 'docker build -t lovecrafted-app .'
+                sh '''
+                docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG .
+                '''
             }
         }
 
-        stage('Deploy') {
+        stage('Push to Docker Hub') {
             steps {
-                sh '''
-                docker stop lovecrafted || true
-                docker rm lovecrafted || true
-                docker run -d -p 8081:80 --name lovecrafted lovecrafted-app
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG
+                    docker logout
+                    '''
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh 'docker image prune -f'
             }
         }
     }
