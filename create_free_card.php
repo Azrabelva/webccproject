@@ -13,9 +13,8 @@ $userId = $userSession['id'];
 
 /* ================= GET PREMIUM STATUS FROM DB ================= */
 $stmt = $conn->prepare("SELECT premium FROM users WHERE id = ?");
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$res = $stmt->get_result()->fetch_assoc();
+$stmt->execute([$userId]);
+$res = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $isPremium = !empty($res['premium']);
 
@@ -35,13 +34,13 @@ if (in_array($type, $premiumTemplates) && !$isPremium) {
 
 /* ================= TEMPLATE NAME ================= */
 $themeName = [
-  'birthday'    => 'Happy Birthday',
+  'birthday' => 'Happy Birthday',
   'anniversary' => 'Happy Anniversary',
-  'mother'      => 'Mother’s Day',
-  'father'      => 'Father’s Day',
-  'wedding'     => 'Wedding',
-  'eid'         => 'Eid Mubarak',
-  'confess'     => 'Confession Love'
+  'mother' => 'Mother’s Day',
+  'father' => 'Father’s Day',
+  'wedding' => 'Wedding',
+  'eid' => 'Eid Mubarak',
+  'confess' => 'Confession Love'
 ][$type] ?? 'Custom Card';
 
 
@@ -433,15 +432,10 @@ $themeName = [
         <input type="file" name="images[]" multiple accept="image/*" onchange="previewImages(event)">
         <div class="preview-box" id="preview"></div>
         <!-- TAMBAH TEKS PREMIUM -->
-       
+
         <!-- MUSIC LINK -->
         <label>Link Musik 🎵 (Premium)</label>
-        <input
-          type="url"
-          name="spotify_link"
-          id="musicLink"
-          placeholder="https://open.spotify.com/..."
-          <?= !$isPremium ? 'disabled' : '' ?>>
+        <input type="url" name="spotify_link" id="musicLink" placeholder="https://open.spotify.com/..." <?= !$isPremium ? 'disabled' : '' ?>>
 
         <?php if (!$isPremium): ?>
           <small style="color:#be185d;display:block;margin-top:-10px;margin-bottom:18px;">
@@ -572,12 +566,12 @@ $themeName = [
     /* ===== TOMBOL SUDAH BAYAR ===== */
     document.getElementById("btnYesPaid").addEventListener("click", () => {
       fetch("confirm_payment.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: "card_id=<?= $id ?? '' ?>"
-        })
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "card_id=<?= $id ?? '' ?>"
+      })
         .then(res => res.json())
         .then(res => {
           if (res.success) {
