@@ -11,9 +11,9 @@ if (!isset($_SESSION['user'])) {
 $user_id = $_SESSION['user']['id'];
 
 /* ================= AMBIL DATA FORM ================= */
-$type    = $_POST['type'] ?? null;
-$to      = trim($_POST['to'] ?? '');
-$from    = trim($_POST['from'] ?? '');
+$type = $_POST['type'] ?? null;
+$to = trim($_POST['to'] ?? '');
+$from = trim($_POST['from'] ?? '');
 $message = trim($_POST['message'] ?? '');
 
 /* === MUSIC / SPOTIFY LINK === */
@@ -39,7 +39,7 @@ $photo1 = $photo2 = $photo3 = null;
 
 if (!empty($_FILES['images']['name'][0])) {
 
-    $allowed = ['jpg','jpeg','png','webp'];
+    $allowed = ['jpg', 'jpeg', 'png', 'webp'];
     $dir = 'uploads/cards/';
 
     if (!is_dir($dir)) {
@@ -48,24 +48,31 @@ if (!empty($_FILES['images']['name'][0])) {
 
     for ($i = 0; $i < min(3, count($_FILES['images']['name'])); $i++) {
 
-        if ($_FILES['images']['error'][$i] !== 0) continue;
+        if ($_FILES['images']['error'][$i] !== 0)
+            continue;
 
         $ext = strtolower(pathinfo($_FILES['images']['name'][$i], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed)) continue;
+        if (!in_array($ext, $allowed))
+            continue;
 
-        if ($_FILES['images']['size'][$i] > 2 * 1024 * 1024) continue;
+        if ($_FILES['images']['size'][$i] > 2 * 1024 * 1024)
+            continue;
 
-        $filename = 'photo'.($i+1).'_'.time().'_'.rand(1000,9999).'.'.$ext;
-        $path = $dir.$filename;
+        $filename = 'photo' . ($i + 1) . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+        $path = $dir . $filename;
 
         if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $path)) {
-            if ($i === 0) $photo1 = $path;
-            if ($i === 1) $photo2 = $path;
-            if ($i === 2) $photo3 = $path;
+            if ($i === 0)
+                $photo1 = $path;
+            if ($i === 1)
+                $photo2 = $path;
+            if ($i === 2)
+                $photo3 = $path;
         }
     }
 }
 
+/* ================= INSERT KE DATABASE ================= */
 /* ================= INSERT KE DATABASE ================= */
 $stmt = $conn->prepare("
     INSERT INTO cards 
@@ -74,8 +81,7 @@ $stmt = $conn->prepare("
     VALUES (?,?,?,?,?,?,?,?,?,?,?)
 ");
 
-$stmt->bind_param(
-    "issssssssss",
+$stmt->execute([
     $user_id,
     $type,
     $to,
@@ -87,13 +93,11 @@ $stmt->bind_param(
     $photo2,
     $photo3,
     $spotify_link
-);
-
-$stmt->execute();
+]);
 
 /* ================= AMBIL ID ================= */
-$card_id = $stmt->insert_id;
+$card_id = $conn->lastInsertId();
 
 /* ================= REDIRECT ================= */
-header("Location: view.php?id=".$card_id);
+header("Location: view.php?id=" . $card_id);
 exit;

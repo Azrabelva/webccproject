@@ -26,21 +26,19 @@ if ($cardId) {
     FROM cards
     WHERE id = ?
   ");
-  $stmt->bind_param("i", $cardId);
-  $stmt->execute();
-  $data = $stmt->get_result()->fetch_assoc();
+  $stmt->execute([$cardId]);
+  $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
   if ($data) {
     $userId = $data['user_id'];
 
     // set card jadi paid (dummy)
     $stmt = $conn->prepare("
-      UPDATE cards 
-      SET payment_status = 'paid' 
-      WHERE id = ?
+        UPDATE cards 
+        SET payment_status = 'paid' 
+        WHERE id = ?
     ");
-    $stmt->bind_param("i", $cardId);
-    $stmt->execute();
+    $stmt->execute([$cardId]);
   }
 }
 
@@ -50,8 +48,7 @@ $stmt = $conn->prepare("
   SET premium = 1 
   WHERE id = ?
 ");
-$stmt->bind_param("i", $userId);
-$stmt->execute();
+$stmt->execute([$userId]);
 
 /* === UPDATE SESSION BIAR LANGSUNG KEDETECT === */
 $_SESSION['user']['premium'] = 1;

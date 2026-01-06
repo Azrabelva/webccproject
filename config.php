@@ -7,43 +7,19 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 /* =====================================================
-   ERROR REPORTING
-   (MATIKAN DISPLAY ERROR BIAR JSON BERSIH)
+   BASE URL (Otomatis deteksi)
    ===================================================== */
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://';
+$scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF']);
+
+// Normalize path separators for URLs (convert backslashes to forward slashes)
+$scriptDir = str_replace('\\', '/', $scriptDir);
+
+$BASE_URL = $protocol . $host . rtrim($scriptDir, '/');
 
 /* =====================================================
-   DATABASE CONNECTION (MYSQLI)
-   ===================================================== */
-$DB_HOST = getenv('DB_HOST') ?: 'localhost';
-$DB_USER = getenv('DB_USER') ?: 'root';
-$DB_PASS = getenv('DB_PASS') ?: '';
-$DB_NAME = getenv('DB_NAME') ?: 'lovecrafted';
-
-$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-if ($conn->connect_error) {
-    http_response_code(500);
-    die("Database error");
-}
-$conn->set_charset("utf8mb4");
-
-/* =====================================================
-   ADMIN LOGIN
-   ===================================================== */
-$ADMIN_USER = "admin";
-$ADMIN_PASS = "admin"; // sandbox / lokal
-
-/* =====================================================
-   BASE URL (AUTO)
-   ===================================================== */
-$BASE_URL =
-    ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://')
-    . $_SERVER['HTTP_HOST']
-    . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-
-/* =====================================================
-   CARD STORAGE (JSON)
+   CARD STORAGE (JSON) - Keeping this for backward compat
    ===================================================== */
 $CARD_DIR = __DIR__ . '/cards';
 if (!is_dir($CARD_DIR)) {
@@ -51,122 +27,107 @@ if (!is_dir($CARD_DIR)) {
 }
 
 /* =====================================================
+   DATABASE CONNECTION (SQLite via PDO)
+   ===================================================== */
+$DB_FILE = __DIR__ . '/database.sqlite';
+$conn = null;
+
+try {
+    $conn = new PDO('sqlite:' . $DB_FILE);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+    // Initial Setup (Auto-Migration)
+    $conn->exec('
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fullname TEXT NOT NULL,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            premium INTEGER DEFAULT 0,
+            oauth_provider TEXT DEFAULT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_key TEXT NOT NULL,
+            title TEXT NOT NULL,
+            image TEXT NOT NULL,
+            is_premium INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS cards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            template_type TEXT,
+            receiver_name TEXT,
+            sender_name TEXT,
+            main_message TEXT,
+            extra_title TEXT,
+            extra_text TEXT,
+            photo1 TEXT,
+            photo2 TEXT,
+            photo3 TEXT,
+            spotify_link TEXT,
+            payment_status TEXT DEFAULT "unpaid",
+            price INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id TEXT UNIQUE,
+            user_id INTEGER,
+            amount INTEGER,
+            status TEXT DEFAULT "pending",
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+    ');
+
+} catch (PDOException $e) {
+    die('Connection failed: ' . $e->getMessage());
+}
+
+/* =====================================================
+   SYSTEM ADMIN CREDENTIALS (HARDCODED)
+   ===================================================== */
+$ADMIN_USER = 'admin';
+$ADMIN_PASS = 'lovecrafted2025';
+
+/* =====================================================
    MIDTRANS CONFIGURATION (SANDBOX)
    ===================================================== */
-require_once __DIR__ . '/vendor/autoload.php';
-
-/* === ENVIRONMENT FLAG (INI YANG TADI ERROR) === */
-$MIDTRANS_ENV = 'sandbox'; // WAJIB ADA
-
-/* === SANDBOX KEYS === */
-$MIDTRANS_SERVER_KEY = "Mid-server-G_MncuZhAiv9L4WpvmZ5jjGL";
-$MIDTRANS_CLIENT_KEY = "Mid-client-bML5eC8KgU0m0b4L";
-
-/* === APPLY MIDTRANS CONFIG === */
-\Midtrans\Config::$isProduction = false; // SANDBOX
-\Midtrans\Config::$serverKey    = $MIDTRANS_SERVER_KEY;
-\Midtrans\Config::$clientKey    = $MIDTRANS_CLIENT_KEY;
-\Midtrans\Config::$isSanitized  = true;
-\Midtrans\Config::$is3ds        = true;
+$MIDTRANS_ENV = 'sandbox'; 
+$MIDTRANS_SERVER_KEY = 'Mid-server-G_MncuZhAiv9L4WpvmZ5jjGL';
+$MIDTRANS_CLIENT_KEY = 'Mid-client-bML5eC8KgU0m0b4L';
+$MIDTRANS_SNAP_URL = 'https://app.sandbox.midtrans.com/snap/snap.js'; // Sandbox
 
 /* =====================================================
-   JSON CARD FUNCTIONS
+   GOOGLE OAUTH CONFIGURATION
    ===================================================== */
-function load_card_json($id){
-    global $CARD_DIR;
-    $file = $CARD_DIR . "/$id.json";
-    return is_file($file) ? json_decode(file_get_contents($file), true) : null;
-}
-
-function save_card_json($data){
-    global $CARD_DIR;
-    if (empty($data['id'])) return false;
-
-    $file = $CARD_DIR . "/{$data['id']}.json";
-    return (bool) file_put_contents(
-        $file,
-        json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-    );
-}
-
-function delete_card_json($id){
-    global $CARD_DIR;
-    $file = $CARD_DIR . "/$id.json";
-    return is_file($file) ? unlink($file) : false;
-}
+$GOOGLE_CLIENT_ID = '615293596362-95gc7m4duel9rbujis8mk5jngjalbucf.apps.googleusercontent.com';
+$GOOGLE_CLIENT_SECRET = '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';
+$GOOGLE_REDIRECT_URI = $BASE_URL . '/login_google_callback.php';
 
 /* =====================================================
-   DATABASE CARD FUNCTIONS
+   LOAD COMPOSER DEPENDENCIES
    ===================================================== */
-function load_card_db($publicId){
-    global $conn;
-
-    $stmt = $conn->prepare(
-        "SELECT * FROM cards WHERE public_id = ? LIMIT 1"
-    );
-    $stmt->bind_param("s", $publicId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-
-    if ($row = $res->fetch_assoc()) {
-        return [
-            'id'             => $row['public_id'],
-            'type'           => $row['template_type'],
-            'to'             => $row['receiver_name'],
-            'from'           => $row['sender_name'],
-            'message1'       => $row['main_message'],
-            'spotify_url'    => $row['spotify_link'],
-            'photos'         => array_filter([
-                $row['photo1'], $row['photo2'], $row['photo3']
-            ]),
-            'payment_status' => $row['payment_status'],
-            'created_at'     => $row['created_at'],
-        ];
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+    
+    // Configure Midtrans only if library is loaded
+    if (class_exists('\Midtrans\Config')) {
+        \Midtrans\Config::$isProduction = false; // SANDBOX
+        \Midtrans\Config::$serverKey    = $MIDTRANS_SERVER_KEY;       
+        \Midtrans\Config::$clientKey    = $MIDTRANS_CLIENT_KEY;       
+        \Midtrans\Config::$isSanitized  = true;
+        \Midtrans\Config::$is3ds        = true;
     }
-    return null;
-}
-
-function save_card_db($card){
-    global $conn;
-
-    $stmt = $conn->prepare("
-        INSERT INTO cards
-        (public_id, user_id, template_type, receiver_name, sender_name,
-         main_message, spotify_link,
-         photo1, photo2, photo3,
-         status, payment_status)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-    ");
-
-    $stmt->bind_param(
-        "sissssssssss",
-        $card['id'],
-        $_SESSION['user']['id'],
-        $card['type'],
-        $card['to'],
-        $card['from'],
-        $card['message1'],
-        $card['spotify_url'],
-        $card['photos'][0] ?? null,
-        $card['photos'][1] ?? null,
-        $card['photos'][2] ?? null,
-        'draft',
-        'unpaid'
-    );
-
-    $stmt->execute();
-}
-
-/* =====================================================
-   UTILITIES
-   ===================================================== */
-function generate_public_id($len = 8){
-    $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    $out = '';
-    for ($i = 0; $i < $len; $i++) {
-        $out .= $chars[random_int(0, strlen($chars) - 1)];
-    }
-    return $out;
 }
 
 /* =====================================================
@@ -174,14 +135,14 @@ function generate_public_id($len = 8){
    ===================================================== */
 function require_admin(){
     if (empty($_SESSION['is_admin'])) {
-        header("Location: login.php");
+        header('Location: login.php');
         exit;
     }
 }
 
 function require_user(){
     if (empty($_SESSION['user'])) {
-        header("Location: login.php");
+        header('Location: login.php');
         exit;
     }
 }

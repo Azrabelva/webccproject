@@ -23,15 +23,12 @@ $password = $_POST['password'];
 
 /* ================= CEK DUPLIKASI USERNAME ================= */
 $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$stmt->store_result();
+$stmt->execute([$username]);
 
-if ($stmt->num_rows > 0) {
+if ($stmt->fetch()) {
     header("Location: user_register.php?error=exists");
     exit;
 }
-$stmt->close();
 
 /* ================= SIMPAN KE DATABASE ================= */
 $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -40,13 +37,10 @@ $stmt = $conn->prepare("
     INSERT INTO users (fullname, username, password, premium)
     VALUES (?, ?, ?, 0)
 ");
-$stmt->bind_param("sss", $fullname, $username, $hash);
 
-if (!$stmt->execute()) {
+if (!$stmt->execute([$fullname, $username, $hash])) {
     die("Gagal menyimpan user ke database");
 }
-
-$stmt->close(); 
 
 /* ================= REDIRECT SUKSES ================= */
 header("Location: login.php");

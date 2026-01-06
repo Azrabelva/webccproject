@@ -2,6 +2,7 @@
     "require": {
         "google/apiclient": "2.15",
         "guzzlehttp/guzzle": "7.8",
-        "google/auth": "1.34"
+        "google/auth": "1.34",
+        "midtrans/midtrans-php": "^2.6"
     }
 }

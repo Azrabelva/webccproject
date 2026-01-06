@@ -28,12 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ===== USER LOGIN =====
-    $stmt = $conn->prepare(
-        "SELECT id, fullname, password, premium FROM users WHERE username=? LIMIT 1"
-    );
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $user = $stmt->get_result()->fetch_assoc();
+    $stmt = $conn->prepare("SELECT id, fullname, password, premium FROM users WHERE username=? LIMIT 1");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user'] = [

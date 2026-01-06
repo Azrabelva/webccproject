@@ -34,47 +34,54 @@ if (empty($user['id'])) {
 }
 
 /* ================= PAYMENT CONFIG ================= */
-$amount = 100000; // Harga Premium LoveCrafted
+$amount = 25000; // Harga Premium LoveCrafted (Rp 25.000)
 $order_id = 'LC-' . time() . '-' . $user['id'];
 
 /* ================= SAVE ORDER (PENDING) ================= */
-$stmt = $conn->prepare("
-    INSERT INTO orders (order_id, user_id, amount, status)
-    VALUES (?, ?, ?, 'pending')
-");
+try {
+    $stmt = $conn->prepare("
+        INSERT INTO orders (order_id, user_id, amount, status)
+        VALUES (?, ?, ?, 'pending')
+    ");
 
-if (!$stmt) {
+    if (!$stmt->execute([$order_id, $user['id'], $amount])) {
+        throw new Exception("Failed to save order");
+    }
+
+} catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Failed prepare order'
+        'message' => 'Failed prepare order: ' . $e->getMessage()
     ]);
     exit;
 }
 
-$stmt->bind_param("sii", $order_id, $user['id'], $amount);
-$stmt->execute();
-
 /* ================= MIDTRANS PARAM ================= */
 $params = [
     'transaction_details' => [
-        'order_id'     => $order_id,
+        'order_id' => $order_id,
         'gross_amount' => $amount
     ],
     'enabled_payments' => [
-    'credit_card'
-],
+        'credit_card',
+        'bca_va',
+        'bni_va',
+        'bri_va',
+        'gopay',
+        'shopeepay'
+    ],
     'item_details' => [
         [
-            'id'       => 'LC-PREMIUM',
-            'price'    => $amount,
+            'id' => 'LC-PREMIUM',
+            'price' => $amount,
             'quantity' => 1,
-            'name'     => 'LoveCrafted Premium Access'
+            'name' => 'LoveCrafted Premium Access'
         ]
     ],
     'customer_details' => [
         'first_name' => $user['fullname'] ?? 'LoveCrafted User',
-        'email'      => $user['email'] ?? 'user@lovecrafted.local'
+        'email' => $user['email'] ?? 'user@lovecrafted.local'
     ],
     'callbacks' => [
         'finish' => $BASE_URL . '/payment_success.php'
@@ -84,30 +91,42 @@ $params = [
 /* ================= CREATE SNAP TOKEN ================= */
 try {
 
+    // Check if Midtrans is available
+    if (!class_exists('\Midtrans\Snap')) {
+        throw new Exception('Midtrans library not loaded');
+    }
+
     // Snap otomatis mengikuti MIDTRANS_ENV dari config.php
     $snapToken = \Midtrans\Snap::getSnapToken($params);
 
     header('Content-Type: application/json');
     echo json_encode([
-        'status'   => 'success',
-        'token'    => $snapToken,
+        'status' => 'success',
+        'token' => $snapToken,
         'order_id' => $order_id,
-        'env'      => MIDTRANS_ENV // optional (debug)
+        'env' => $MIDTRANS_ENV // optional (debug)
     ]);
 
 } catch (Exception $e) {
+
+    // Log the error
+    error_log('Payment Error: ' . $e->getMessage());
+    error_log('Stack trace: ' . $e->getTraceAsString());
 
     // Jika gagal, tandai order failed
     $stmt = $conn->prepare("
         UPDATE orders SET status = 'failed'
         WHERE order_id = ?
     ");
-    $stmt->bind_param("s", $order_id);
-    $stmt->execute();
+    $stmt->execute([$order_id]);
 
     http_response_code(500);
     echo json_encode([
-        'status'  => 'error',
-        'message' => $e->getMessage()
+        'status' => 'error',
+        'message' => $e->getMessage(),
+        'debug' => [
+            'midtrans_available' => class_exists('\Midtrans\Snap'),
+            'server_key' => isset($MIDTRANS_SERVER_KEY) ? 'set' : 'not set'
+        ]
     ]);
 }

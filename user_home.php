@@ -12,11 +12,17 @@ $user = $_SESSION['user'];
 
 /* ================= LOAD PREMIUM STATUS ================= */
 $stmt = $conn->prepare("SELECT premium FROM users WHERE id = ?");
-$stmt->bind_param("i", $user['id']);
-$stmt->execute();
-$res = $stmt->get_result()->fetch_assoc();
+$stmt->execute([$user['id']]);
+$res = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$user['premium'] = $res['premium'] ?? 0;
+function getPremiumStatus($res)
+{
+  if (!$res)
+    return 0;
+  return is_array($res) ? ($res['premium'] ?? 0) : ($res->premium ?? 0);
+}
+
+$user['premium'] = $res ? $res['premium'] : 0;
 $_SESSION['user']['premium'] = $user['premium'];
 
 $isPremium = !empty($user['premium']);
@@ -36,7 +42,7 @@ $q = $conn->query("
     ORDER BY created_at DESC
 ");
 
-while ($row = $q->fetch_assoc()) {
+while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
   $templates[] = $row;
 }
 
@@ -54,9 +60,8 @@ $stmt = $conn->prepare("
     WHERE c.user_id = ?
     ORDER BY c.created_at DESC
 ");
-$stmt->bind_param("i", $user['id']);
-$stmt->execute();
-$userCards = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->execute([$user['id']]);
+$userCards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 <!DOCTYPE html>
@@ -385,24 +390,24 @@ $userCards = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
       font-weight: 600;
       cursor: pointer;
     }
-    .badge-free{
-  background:#22c55e;
-  color:#fff;
-  padding:6px 14px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:700;
-}
 
-.badge-premium{
-  background:linear-gradient(135deg,#facc15,#f59e0b);
-  color:#7c2d12;
-  padding:6px 14px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:700;
-}
+    .badge-free {
+      background: #22c55e;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
 
+    .badge-premium {
+      background: linear-gradient(135deg, #facc15, #f59e0b);
+      color: #7c2d12;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
   </style>
 </head>
 
@@ -459,9 +464,7 @@ $userCards = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
               <?php else: ?>
 
-                <a
-                  class="btn-use"
-                  href="create_free_card.php?type=<?= urlencode($t['template_key']) ?>">
+                <a class="btn-use" href="create_free_card.php?type=<?= urlencode($t['template_key']) ?>">
                   Gunakan
                 </a>
 
@@ -474,7 +477,9 @@ $userCards = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     </section>
     <!-- USER CARDS -->
     <section class="card" style="margin-top:36px">
-      <h2>Kartu yang Telah Dibuat</h2> <?php if (empty($userCards)): ?> <p>Belum ada kartu dibuat.</p> <?php else: ?> <div class="table-wrapper">
+      <h2>Kartu yang Telah Dibuat</h2> <?php if (empty($userCards)): ?>
+        <p>Belum ada kartu dibuat.</p> <?php else: ?>
+        <div class="table-wrapper">
           <table class="table">
             <thead>
               <tr>
@@ -485,7 +490,8 @@ $userCards = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 <th class="text-left">Aksi</th>
               </tr>
             </thead>
-            <tbody> <?php foreach ($userCards as $c): ?> <tr>
+            <tbody> <?php foreach ($userCards as $c): ?>
+                <tr>
                   <td>#<?= $c['id'] ?></td>
                   <td><?= strtoupper($c['template_type']) ?></td>
                   <td><?= htmlspecialchars($c['receiver_name']) ?></td>
@@ -496,8 +502,11 @@ $userCards = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                       <span class="badge badge-free">FREE</span>
                     <?php endif; ?>
                   </td>
-                  <td class="action"> <a href="view.php?id=<?= $c['id'] ?>" title="View">Preview</a> <!-- <?php if ($c['payment_status'] != 'paid'): ?> <a href="payment.php?id=<?= $c['id'] ?>" title="Pay">💳</a> <?php endif; ?> --> </td>
-                </tr> <?php endforeach; ?> </tbody>
+                  <td class="action"> <a href="view.php?id=<?= $c['id'] ?>" title="View">Preview</a>
+                    <!-- <?php if ($c['payment_status'] != 'paid'): ?> <a href="payment.php?id=<?= $c['id'] ?>" title="Pay">💳</a> <?php endif; ?> -->
+                  </td>
+                </tr> <?php endforeach; ?>
+            </tbody>
           </table>
         </div> <?php endif; ?>
     </section>

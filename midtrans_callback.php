@@ -17,9 +17,9 @@ try {
 }
 
 /* ================= DATA FROM MIDTRANS ================= */
-$order_id           = $notif->order_id ?? null;
+$order_id = $notif->order_id ?? null;
 $transaction_status = $notif->transaction_status ?? null;
-$fraud_status       = $notif->fraud_status ?? null;
+$fraud_status = $notif->fraud_status ?? null;
 
 /* ================= BASIC VALIDATION ================= */
 if (!$order_id || !$transaction_status) {
@@ -39,8 +39,7 @@ if (
         SET status = 'paid'
         WHERE order_id = ?
     ");
-    $stmt->bind_param("s", $order_id);
-    $stmt->execute();
+    $stmt->execute([$order_id]);
 
     /* ---------- Aktifkan premium user ---------- */
     $stmt = $conn->prepare("
@@ -50,8 +49,7 @@ if (
             SELECT user_id FROM orders WHERE order_id = ?
         )
     ");
-    $stmt->bind_param("s", $order_id);
-    $stmt->execute();
+    $stmt->execute([$order_id]);
 
 } elseif (
     $transaction_status === 'cancel' ||
@@ -65,8 +63,7 @@ if (
         SET status = 'failed'
         WHERE order_id = ?
     ");
-    $stmt->bind_param("s", $order_id);
-    $stmt->execute();
+    $stmt->execute([$order_id]);
 }
 
 /* ================= DONE ================= */
