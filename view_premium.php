@@ -239,6 +239,53 @@
       top: 80px;
       transform: translateX(-50%) rotate(0deg) scale(1) !important;
     }
+    
+#btnAutoRecord{
+  background:#ff3d3d;
+  color:#fff;
+}
+/* ================= MOBILE VIDEO MODE ================= */
+@media (max-width: 768px) {
+
+  .stage{
+    width:100vw;
+    height:100vh;
+  }
+
+  .envelope-stage{
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+
+  .letter-area{
+    width:90vw;
+  }
+
+  .photo-scene{
+    width:90vw;
+    height:260px;
+  }
+
+  .photo{
+    width:28vw;
+  }
+
+  .photo img{
+    height:120px;
+  }
+
+  /* tombol */
+  .btn-home{
+    font-size:12px;
+    padding:8px 12px;
+  }
+
+  iframe{
+    width:260px !important;
+    height:80px !important;
+  }
+}
+
+
   </style>
 </head>
 
@@ -258,7 +305,7 @@
         <!-- LETTER 1 -->
         <div class="letter" id="letter1">
           <div class="letter-title">make a wish!</div>
-          <img src="assets/premium/cake.png" width="90">
+          <!-- <img src="assets/premium/cake.png" width="90"> -->
           <div style="margin-top:10px">22.02.2002</div>
         </div>
 
@@ -321,9 +368,12 @@
 
     <div style="left:25px;" class="tap">Tap untuk membuka ✨</div>
     <!-- BACK TO HOME BUTTON -->
-    <a href="user_home.php" class="btn-home" id="btnHome">
+    <a href="user_home.php" class="btn-home show" id="btnHome">
       ⬅ Kembali ke Home
     </a>
+    <button id="btnAutoRecord" class="btn-home show" style="top:65px">
+  🎥 Auto Save Video
+</button>
 
   </div>
 
@@ -392,6 +442,87 @@
     }, {
       once: true
     });
+let recorder;
+let recordedChunks = [];
+
+/* ================= AUTO RECORD FLOW ================= */
+async function startAutoRecord() {
+
+  alert("Pilih 'This Tab' lalu klik Share untuk mulai video versi mobile 📱");
+
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: {
+      frameRate: 60,
+      width: 1080,
+      height: 1920
+    },
+    audio: true
+  });
+
+  recorder = new MediaRecorder(stream);
+
+  recorder.ondataavailable = e => recordedChunks.push(e.data);
+
+  recorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "LoveCrafted-Mobile-Video.webm";
+    a.click();
+
+    recordedChunks = [];
+  };
+
+  recorder.start();
+
+  runAutoFlow();
+
+  setTimeout(() => {
+    recorder.stop();
+    stream.getTracks().forEach(t => t.stop());
+  }, 13000);
+}
+
+/* ================= AUTO ANIMATION ================= */
+function runAutoFlow(){
+  step = 0;
+
+  // STEP 1
+  setTimeout(() => {
+    envClosed.classList.add('open');
+    envOpen.classList.remove('open');
+  }, 500);
+
+  // STEP 2
+  setTimeout(() => {
+    letter1.classList.add('show');
+  }, 1600);
+
+  // STEP 3
+  setTimeout(() => {
+    letter1.classList.remove('show');
+    letter1.classList.add('back');
+    letter2.classList.add('show');
+  }, 2800);
+
+  // STEP 4
+  setTimeout(() => {
+    document.querySelector('.letter-area').classList.add('hide');
+    document.getElementById('btnHome').classList.add('show');
+
+    photoScene.classList.add('show');
+    photos.forEach((p, i) => {
+      setTimeout(() => p.classList.add('show'), i * 200);
+    });
+  }, 4300);
+}
+
+/* ================= BUTTON ================= */
+document.getElementById("btnAutoRecord")
+  .addEventListener("click", startAutoRecord);
+
   </script>
 
 
