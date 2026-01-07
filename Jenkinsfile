@@ -5,6 +5,8 @@ pipeline {
         APP_NAME = 'lovecrafted-app-2025'
         RESOURCE_GROUP = 'CloudComputing'
         ZIP_FILE = 'lovecrafted-deploy.zip'
+        DEPLOY_URL = "https://${APP_NAME}.scm.azurewebsites.net/api/zipdeploy"
+        APP_URL = "https://${APP_NAME}.azurewebsites.net"
     }
     
     stages {
@@ -18,32 +20,62 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Composer dependencies...'
-                sh '''
-                    composer install --no-dev --optimize-autoloader
-                '''
+                script {
+                    if (isUnix()) {
+                        sh 'composer install --no-dev --optimize-autoloader --no-interaction'
+                    } else {
+                        bat 'composer install --no-dev --optimize-autoloader --no-interaction'
+                    }
+                }
             }
         }
         
         stage('Prepare Deployment Package') {
             steps {
                 echo 'Creating deployment package...'
-                sh '''
-                    # Remove existing zip if exists
-                    rm -f ${ZIP_FILE}
+                script {
+                    // Remove old zip if exists
+                    if (fileExists(env.ZIP_FILE)) {
+                        if (isUnix()) {
+                            sh "rm -f ${env.ZIP_FILE}"
+                        } else {
+                            bat "del /F ${env.ZIP_FILE}"
+                        }
+                    }
                     
-                    # Create zip excluding unnecessary files
-                    zip -r ${ZIP_FILE} . \
-                        -x "*.git*" \
-                        -x "*.sqlite" \
-                        -x "node_modules/*" \
-                        -x "*.md" \
-                        -x ".env" \
-                        -x "tests/*" \
-                        -x "*.log"
-                    
-                    echo "Deployment package created: ${ZIP_FILE}"
-                    ls -lh ${ZIP_FILE}
-                '''
+                    // Create zip package
+                    if (isUnix()) {
+                        sh '''
+                            zip -r ${ZIP_FILE} . \
+                                -x "*.git*" \
+                                -x "*.sqlite" \
+                                -x "node_modules/*" \
+                                -x "*.md" \
+                                -x ".env*" \
+                                -x "tests/*" \
+                                -x "*.log" \
+                                -x ".vscode/*" \
+                                -x ".idea/*"
+                            
+                            echo "Package size:"
+                            ls -lh ${ZIP_FILE}
+                        '''
+                    } else {
+                        // Windows - use PowerShell
+                        bat """
+                            powershell -Command "& {
+                                Remove-Item -Path ${env.ZIP_FILE} -Force -ErrorAction SilentlyContinue
+                                
+                                \$exclude = @('*.git*', '*.sqlite', 'node_modules', '*.md', '.env*', 'tests', '*.log', '.vscode', '.idea')
+                                
+                                Compress-Archive -Path * -DestinationPath ${env.ZIP_FILE} -Force
+                                
+                                Write-Host 'Package created:'
+                                Get-Item ${env.ZIP_FILE} | Select-Object Name, Length
+                            }"
+                        """
+                    }
+                }
             }
         }
         
@@ -55,16 +87,35 @@ pipeline {
                     usernameVariable: 'AZURE_USER',
                     passwordVariable: 'AZURE_PASS'
                 )]) {
-                    sh '''
-                        # Deploy using Kudu ZIP Deploy API
-                        curl -X POST \
-                            -u "${AZURE_USER}:${AZURE_PASS}" \
-                            -H "Content-Type: application/zip" \
-                            --data-binary @${ZIP_FILE} \
-                            https://${APP_NAME}.scm.azurewebsites.net/api/zipdeploy
-                        
-                        echo "Deployment completed!"
-                    '''
+                    script {
+                        if (isUnix()) {
+                            sh """
+                                echo 'Uploading to Azure...'
+                                curl -X POST \\
+                                    -u "\${AZURE_USER}:\${AZURE_PASS}" \\
+                                    -H "Content-Type: application/zip" \\
+                                    --data-binary @${env.ZIP_FILE} \\
+                                    ${env.DEPLOY_URL} \\
+                                    --max-time 300 \\
+                                    -v
+                                
+                                echo 'Deployment request sent!'
+                            """
+                        } else {
+                            bat """
+                                echo Uploading to Azure...
+                                curl -X POST ^
+                                    -u "%AZURE_USER%:%AZURE_PASS%" ^
+                                    -H "Content-Type: application/zip" ^
+                                    --data-binary @${env.ZIP_FILE} ^
+                                    ${env.DEPLOY_URL} ^
+                                    --max-time 300 ^
+                                    -v
+                                
+                                echo Deployment request sent!
+                            """
+                        }
+                    }
                 }
             }
         }
@@ -72,20 +123,31 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 echo 'Verifying deployment...'
-                sh '''
-                    # Wait for app to restart
-                    sleep 10
+                script {
+                    sleep(time: 15, unit: 'SECONDS')
                     
-                    # Check if site is responding
-                    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-                        https://${APP_NAME}.azurewebsites.net)
-                    
-                    if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
-                        echo "✅ Deployment successful! Site is responding (HTTP $HTTP_CODE)"
-                    else
-                        echo "⚠️ Warning: Site returned HTTP $HTTP_CODE"
-                    fi
-                '''
+                    if (isUnix()) {
+                        sh """
+                            HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" ${env.APP_URL})
+                            echo "Site HTTP Code: \$HTTP_CODE"
+                            
+                            if [ "\$HTTP_CODE" -eq 200 ] || [ "\$HTTP_CODE" -eq 302 ]; then
+                                echo "✅ Deployment verified! Site is responding."
+                            else
+                                echo "⚠️ Warning: Site returned HTTP \$HTTP_CODE"
+                            fi
+                        """
+                    } else {
+                        bat """
+                            curl -s -o nul -w "%%{http_code}" ${env.APP_URL} > temp_http_code.txt
+                            set /p HTTP_CODE=<temp_http_code.txt
+                            echo Site HTTP Code: %HTTP_CODE%
+                            del temp_http_code.txt
+                            
+                            echo Deployment verification complete
+                        """
+                    }
+                }
             }
         }
     }
@@ -93,14 +155,32 @@ pipeline {
     post {
         success {
             echo '🎉 Deployment to Azure completed successfully!'
-            echo "🔗 URL: https://${APP_NAME}.azurewebsites.net"
+            echo "🔗 Application URL: ${env.APP_URL}"
+            echo '📋 Next steps:'
+            echo '  1. Update Google OAuth redirect URI'
+            echo '  2. Test login/registration'
+            echo '  3. Verify payment integration'
         }
         failure {
-            echo '❌ Deployment failed. Check logs for details.'
+            echo '❌ Deployment failed!'
+            echo 'Check the console output above for error details.'
+            echo 'Common issues:'
+            echo '  - Credentials expired or incorrect'
+            echo '  - Network timeout to Azure'
+            echo '  - Composer dependencies failed'
         }
         always {
-            echo 'Cleaning up...'
-            sh 'rm -f ${ZIP_FILE}'
+            echo 'Cleaning up deployment artifacts...'
+            script {
+                if (fileExists(env.ZIP_FILE)) {
+                    if (isUnix()) {
+                        sh "rm -f ${env.ZIP_FILE}"
+                    } else {
+                        bat "del /F ${env.ZIP_FILE}"
+                    }
+                }
+            }
         }
     }
 }
+
