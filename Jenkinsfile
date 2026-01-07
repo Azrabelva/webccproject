@@ -1,55 +1,106 @@
 pipeline {
     agent any
-
+    
     environment {
-        ACR_SERVER = 'lovecraftedacr.azurecr.io'
-        IMAGE_NAME = 'lovecrafted'
-        IMAGE_TAG  = 'latest'
+        APP_NAME = 'lovecrafted-app-2025'
+        RESOURCE_GROUP = 'CloudComputing'
+        ZIP_FILE = 'lovecrafted-deploy.zip'
     }
-
+    
     stages {
-
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Azrabelva/webccproject.git'
+                echo 'Checking out code from GitHub...'
+                checkout scm
             }
         }
-
-        stage('Build Docker Image') {
+        
+        stage('Install Dependencies') {
             steps {
-                bat '''
-                docker build -t %ACR_SERVER%/%IMAGE_NAME%:%IMAGE_TAG% .
+                echo 'Installing Composer dependencies...'
+                sh '''
+                    composer install --no-dev --optimize-autoloader
                 '''
             }
         }
-
-        stage('Login to ACR') {
+        
+        stage('Prepare Deployment Package') {
             steps {
+                echo 'Creating deployment package...'
+                sh '''
+                    # Remove existing zip if exists
+                    rm -f ${ZIP_FILE}
+                    
+                    # Create zip excluding unnecessary files
+                    zip -r ${ZIP_FILE} . \
+                        -x "*.git*" \
+                        -x "*.sqlite" \
+                        -x "node_modules/*" \
+                        -x "*.md" \
+                        -x ".env" \
+                        -x "tests/*" \
+                        -x "*.log"
+                    
+                    echo "Deployment package created: ${ZIP_FILE}"
+                    ls -lh ${ZIP_FILE}
+                '''
+            }
+        }
+        
+        stage('Deploy to Azure') {
+            steps {
+                echo 'Deploying to Azure Web App...'
                 withCredentials([usernamePassword(
-                    credentialsId: 'acr-creds',
-                    usernameVariable: 'ACR_USER',
-                    passwordVariable: 'ACR_PASS'
+                    credentialsId: 'azure-lovecrafted-deploy',
+                    usernameVariable: 'AZURE_USER',
+                    passwordVariable: 'AZURE_PASS'
                 )]) {
-                    bat '''
-                    docker login %ACR_SERVER% -u %ACR_USER% -p %ACR_PASS%
+                    sh '''
+                        # Deploy using Kudu ZIP Deploy API
+                        curl -X POST \
+                            -u "${AZURE_USER}:${AZURE_PASS}" \
+                            -H "Content-Type: application/zip" \
+                            --data-binary @${ZIP_FILE} \
+                            https://${APP_NAME}.scm.azurewebsites.net/api/zipdeploy
+                        
+                        echo "Deployment completed!"
                     '''
                 }
             }
         }
-
-        stage('Push Image to ACR') {
+        
+        stage('Verify Deployment') {
             steps {
-                bat '''
-                docker push %ACR_SERVER%/%IMAGE_NAME%:%IMAGE_TAG%
+                echo 'Verifying deployment...'
+                sh '''
+                    # Wait for app to restart
+                    sleep 10
+                    
+                    # Check if site is responding
+                    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                        https://${APP_NAME}.azurewebsites.net)
+                    
+                    if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
+                        echo "✅ Deployment successful! Site is responding (HTTP $HTTP_CODE)"
+                    else
+                        echo "⚠️ Warning: Site returned HTTP $HTTP_CODE"
+                    fi
                 '''
             }
         }
-
-        stage('Cleanup') {
-            steps {
-                bat 'docker image prune -f'
-            }
+    }
+    
+    post {
+        success {
+            echo '🎉 Deployment to Azure completed successfully!'
+            echo "🔗 URL: https://${APP_NAME}.azurewebsites.net"
+        }
+        failure {
+            echo '❌ Deployment failed. Check logs for details.'
+        }
+        always {
+            echo 'Cleaning up...'
+            sh 'rm -f ${ZIP_FILE}'
         }
     }
 }
