@@ -1,13 +1,20 @@
 <?php
-require 'vendor/autoload.php';
+require_once 'config.php';
 
-$client = new Google_Client();
-$client->setClientId('615293596362-95gc7m4duel9rbujis8mk5jngjalbucf.apps.googleusercontent.com');
-$client->setClientSecret('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');
-$client->setRedirectUri('http://localhost:8000/login_google_callback.php');
-$client->setPrompt('select_account');
-$client->addScope("email");
-$client->addScope("profile");
+/* =====================================================
+   INIT GOOGLE CLIENT (pakai config)
+   ===================================================== */
+$googleClient = new Google_Client();
+$googleClient->setClientId($GOOGLE_CLIENT_ID);
+$googleClient->setClientSecret($GOOGLE_CLIENT_SECRET);
+$googleClient->setRedirectUri($GOOGLE_REDIRECT_URI);
 
-header('Location: ' . $client->createAuthUrl());
+$googleClient->setPrompt('select_account');
+$googleClient->addScope('email');
+$googleClient->addScope('profile');
+
+/* =====================================================
+   REDIRECT TO GOOGLE AUTH
+   ===================================================== */
+header('Location: ' . $googleClient->createAuthUrl());
 exit;
