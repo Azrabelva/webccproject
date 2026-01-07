@@ -309,13 +309,6 @@ while ($row = $q->fetch_assoc()) {
                                             👁️
                                         </a>
 
-                                        <a href="<?= $payUrl ?>" target="_blank" title="Pay">
-                                            💳
-                                        </a>
-
-                                        <a href="admin_edit.php?id=<?= $id ?>" title="Edit">
-                                            ✏️
-                                        </a>
 
                                         <a href="admin_delete.php?id=<?= $id ?>"
                                             title="Delete"
