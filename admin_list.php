@@ -2,28 +2,30 @@
 require 'config.php';
 require_admin();
 
-/* ================= LOAD CARD FROM DB ================= */
+/* ================= LOAD CARD ================= */
+$files = glob($CARD_DIR . '/*.json');
 $cards = [];
-$stmt = $conn->query("SELECT * FROM cards ORDER BY created_at DESC");
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    // Map DB columns to display format if needed
-    $row['type'] = $row['template_type'];
-    $row['to'] = $row['receiver_name'];
-    $row['from'] = $row['sender_name'];
-    $row['created'] = $row['created_at'];
-    $cards[] = $row;
+
+foreach ($files as $f) {
+    $d = json_decode(file_get_contents($f), true);
+    if (!$d || empty($d['id'])) continue;
+    $cards[] = $d;
 }
 
+usort($cards, function ($a, $b) {
+    return strcmp($b['created'] ?? '', $a['created'] ?? '');
+});
+
 /* ================= ADMIN STAT ================= */
-$totalCards = count($cards);
-$totalPaid = 0;
-$totalUnpaid = 0;
+$totalCards   = count($cards);
+$totalPaid    = 0;
+$totalUnpaid  = 0;
 $totalRevenue = 0;
 
 foreach ($cards as $c) {
     if (($c['payment_status'] ?? '') === 'paid') {
         $totalPaid++;
-        $totalRevenue += (int) ($c['price'] ?? 0);
+        $totalRevenue += (int)($c['price'] ?? 0);
     } else {
         $totalUnpaid++;
     }
@@ -32,7 +34,7 @@ foreach ($cards as $c) {
 /* ================= TEMPLATE LIST ================= */
 $templates = [];
 $q = $conn->query("SELECT * FROM templates ORDER BY created_at DESC");
-while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+while ($row = $q->fetch_assoc()) {
     $templates[] = $row;
 }
 
@@ -232,32 +234,32 @@ while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
             </div>
 
             <div class="admin-template-grid" style="margin-top:20px;">
-                <?php foreach ($templates as $t): ?>
-                    <div class="admin-template-card">
+    <?php foreach ($templates as $t): ?>
+        <div class="admin-template-card">
 
-                        <img src="<?= htmlspecialchars($t['image']) ?>" alt="<?= htmlspecialchars($t['title']) ?>">
+            <img src="<?= htmlspecialchars($t['image']) ?>" alt="<?= htmlspecialchars($t['title']) ?>">
 
-                        <div class="admin-template-info">
-                            <h4><?= htmlspecialchars($t['title']) ?></h4>
+            <div class="admin-template-info">
+                <h4><?= htmlspecialchars($t['title']) ?></h4>
 
-                            <span class="badge <?= $t['is_premium'] ? 'badge-premium' : 'badge-free' ?>">
-                                <?= $t['is_premium'] ? 'PREMIUM' : 'FREE' ?>
-                            </span>
+                <span class="badge <?= $t['is_premium'] ? 'badge-premium' : 'badge-free' ?>">
+                    <?= $t['is_premium'] ? 'PREMIUM' : 'FREE' ?>
+                </span>
 
-                            <div class="template-id">
-                                ID: <b><?= htmlspecialchars($t['template_key']) ?></b>
-                            </div>
-                        </div>
-
-                        <div class="admin-template-action">
-                            <a href="admin_template_edit.php?id=<?= htmlspecialchars($t['id']) ?>" class="btn-edit">
-                                ✏️ Edit Template
-                            </a>
-                        </div>
-
-                    </div>
-                <?php endforeach; ?>
+                <div class="template-id">
+                    ID: <b><?= htmlspecialchars($t['template_key']) ?></b>
+                </div>
             </div>
+
+            <div class="admin-template-action">
+                <a href="admin_template_edit.php?id=<?= htmlspecialchars($t['id']) ?>" class="btn-edit">
+                    ✏️ Edit Template
+                </a>
+            </div>
+
+        </div>
+    <?php endforeach; ?>
+</div>
         </section>
 
         <!-- ================= DAFTAR KARTU ================= -->
@@ -276,33 +278,32 @@ while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
                                 <th>To</th>
                                 <th>From</th>
                                 <th>Tanggal</th>
-                                <th>Harga</th>
-                                <th>Status</th>
+                        
+                            
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($cards as $c):
-                                $id = htmlspecialchars($c['id']);
-                                $type = htmlspecialchars($c['type']);
-                                $to = htmlspecialchars($c['to']);
-                                $from = htmlspecialchars($c['from']);
+                                $id      = htmlspecialchars($c['id']);
+                                $type    = htmlspecialchars($c['type']);
+                                $to      = htmlspecialchars($c['to']);
+                                $from    = htmlspecialchars($c['from']);
                                 $created = htmlspecialchars($c['created'] ?? '');
-                                $price = (int) ($c['price'] ?? 0);
-                                $status = $c['payment_status'] ?? 'unpaid';
-                                $label = $status === 'paid' ? 'PAID' : 'UNPAID';
-                                $cls = $status === 'paid' ? 'badge-paid' : 'badge-unpaid';
+                                $price   = (int)($c['price'] ?? 0);
+                                $status  = $c['payment_status'] ?? 'unpaid';
+                                $label   = $status === 'paid' ? 'PAID' : 'UNPAID';
+                                $cls     = $status === 'paid' ? 'badge-paid' : 'badge-unpaid';
                                 $cardUrl = $BASE_URL . '/view.php?id=' . urlencode($id);
-                                $payUrl = $BASE_URL . '/payment.php?id=' . urlencode($id);
-                                ?>
+                                $payUrl  = $BASE_URL . '/payment.php?id=' . urlencode($id);
+                            ?>
                                 <tr>
                                     <td><?= $id ?></td>
                                     <td><?= $type ?></td>
                                     <td><?= $to ?></td>
                                     <td><?= $from ?></td>
                                     <td><?= $created ?></td>
-                                    <td>Rp <?= number_format($price, 0, ',', '.') ?></td>
-                                    <td><span class="badge <?= $cls ?>"><?= $label ?></span></td>
+                                    
                                     <td class="aksi icon-action">
                                         <a href="<?= $cardUrl ?>" target="_blank" title="View">
                                             👁️
@@ -316,7 +317,8 @@ while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
                                             ✏️
                                         </a>
 
-                                        <a href="admin_delete.php?id=<?= $id ?>" title="Delete"
+                                        <a href="admin_delete.php?id=<?= $id ?>"
+                                            title="Delete"
                                             onclick="return confirm('Hapus kartu ini?')">
                                             🗑️
                                         </a>
