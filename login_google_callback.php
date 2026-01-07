@@ -4,9 +4,9 @@ require 'vendor/autoload.php';
 require 'config.php'; // koneksi DB
 
 $client = new Google_Client();
-$client->setClientId($GOOGLE_CLIENT_ID);
-$client->setClientSecret($GOOGLE_CLIENT_SECRET);
-$client->setRedirectUri($GOOGLE_REDIRECT_URI);
+$client->setClientId('615293596362-95gc7m4duel9rbujis8mk5jngjalbucf.apps.googleusercontent.com');
+$client->setClientSecret('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');
+$client->setRedirectUri('http://localhost:8000/login_google_callback.php');
 
 if (!isset($_GET['code'])) {
     exit('Login gagal');
@@ -19,20 +19,22 @@ $googleService = new Google_Service_Oauth2($client);
 $userInfo = $googleService->userinfo->get();
 
 $email = $userInfo->email;
-$name = $userInfo->name;
+$name  = $userInfo->name;
 
 // cek user di DB
 $stmt = $conn->prepare("SELECT * FROM users WHERE email=?");
-$stmt->execute([$email]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
 
 if (!$user) {
     // user baru → insert
     $stmt = $conn->prepare(
         "INSERT INTO users (fullname, email, oauth_provider) VALUES (?, ?, 'google')"
     );
-    $stmt->execute([$name, $email]);
-    $user_id = $conn->lastInsertId();
+    $stmt->bind_param("ss", $name, $email);
+    $stmt->execute();
+    $user_id = $conn->insert_id;
 } else {
     $user_id = $user['id'];
 }
