@@ -69,7 +69,7 @@ $params = [
         'bni_va',
         'bri_va',
         'gopay',
-        'shopeepay'
+        'qris'
     ],
     'item_details' => [
         [
